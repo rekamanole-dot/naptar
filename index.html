@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mackó Csoport Évszaknaptár és Időjárás-tábla</title>
+    <style>
+        :root {
+            --bg-color: #f7f9e8;
+            --primary-color: #ff9800;
+            --primary-dark: #e68a00;
+            --secondary-color: #4caf50;
+            --accent-color: #e91e63;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --weekday-bg: #e3f2fd;
+            --weekday-border: #2196f3;
+            --weekend-bg: #fbe9e7;
+            --weekend-border: #ff5722;
+            --spring-color: #8bc34a;
+            --summer-color: #ffeb3b;
+            --autumn-color: #ff9800;
+            --winter-color: #2196f3;
+            --radius: 20px;
+            --shadow: 0 8px 20px rgba(0,0,0,0.08);
+            --shadow-hover: 0 12px 28px rgba(0,0,0,0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Fredoka', 'Chalkboard SE', 'Arial', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(#8bc34a 10%, transparent 11%),
+                radial-gradient(#ffc107 10%, transparent 11%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Confetti canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Main Header */
+        header {
+            width: 100%;
+            max-width: 1200px;
+            background: linear-gradient(135deg, #ffb74d, #ffa726);
+            border: 4px solid #f57c00;
+            border-radius: var(--radius);
+            padding: 15px 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title-container svg {
+            width: 50px;
+            height: 50px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-reset {
+            background-color: #ff5252;
+            color: white;
+            border: 3px solid #d32f2f;
+            border-radius: 15px;
+            padding: 10px 18px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-reset:hover {
+            background-color: #ff1744;
+            transform: scale(1.05);
+        }
+
+        .btn-reset:active {
+            transform: scale(0.95);
+        }
+
+        /* Layout Grid */
+        .app-container {
+            width: 100%;
+            max-width: 1250px;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 950px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Side: Summary & Teddy Dressing */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Mai Napunk Summary Board */
+        .summary-card {
+            background: #ffffff;
+            border: 4px solid #4caf50;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+        }
+
+        .summary-title {
+            background-color: #4caf50;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .summary-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            line-height: 1.6;
+            color: #2e7d32;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f1f8e9;
+            border-radius: 15px;
+            padding: 12px;
+            border: 2px dashed #aed581;
+        }
+
+        .summary-display .date-text {
+            font-size: 1.3rem;
+            color: #1b5e20;
+            margin-bottom: 4px;
+        }
+
+        .summary-display .weather-text {
+            font-size: 1.1rem;
+            color: #0277bd;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        /* Bear Dressing Area */
+        .bear-card {
+            background: #ffffff;
+            border: 4px solid #ff9800;
+            border-radius: var(--radius);
+            padding: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .bear-title {
+            background-color: #ff9800;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            position: relative;
+            background: #fff8e1;
+            border: 3px solid #ffa000;
+            border-radius: 18px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #5d4037;
+            text-align: center;
+            margin-bottom: 10px;
+            width: 90%;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px 12px 0;
+            border-style: solid;
+            border-color: #ffa000 transparent;
+            display: block;
+            width: 0;
+        }
+
+        /* Bear Stage & SVG */
+        .bear-stage {
+            width: 260px;
+            height: 310px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #e0f7fa 0%, #ffffff 70%);
+            border-radius: 15px;
+            border: 2px solid #b2ebf2;
+            overflow: hidden;
+        }
+
+        /* Bear Joy Animation */
+        @keyframes bearJump {
+            0% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-20px) scale(1.05) rotate(-3deg); }
+            50% { transform: translateY(0) scale(0.98); }
+            75% { transform: translateY(-10px) scale(1.02) rotate(3deg); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        .bear-animate {
+            animation: bearJump 0.7s ease-in-out;
+        }
+
+        /* Right Side: Selection Panels */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-box {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            border: 3px solid #e0e0e0;
+        }
+
+        .section-header {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #424242;
+        }
+
+        .section-header span.badge {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        /* Grid layouts for choices */
+        .options-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+        .grid-7 { grid-template-columns: repeat(7, 1fr); }
+        .grid-dates { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); }
+
+        @media (max-width: 600px) {
+            .grid-7 { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        /* Interactive Choice Card / Button */
+        .choice-btn {
+            background-color: #f5f5f5;
+            border: 3px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+            border-color: #bdbdbd;
+        }
+
+        .choice-btn:active {
+            transform: translateY(0) scale(0.96);
+        }
+
+        .choice-btn.selected {
+            background-color: #fff9c4;
+            border-color: #fbc02d;
+            box-shadow: 0 0 0 4px rgba(251, 192, 45, 0.4), 0 6px 14px rgba(0,0,0,0.15);
+            transform: translateY(-4px) scale(1.03);
+        }
+
+        .choice-btn.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            background: #4caf50;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice-btn svg, .choice-btn img {
+            width: 38px;
+            height: 38px;
+        }
+
+        .choice-btn .btn-label {
+            font-size: 0.95rem;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+
+        /* Custom color styles for Days of Week */
+        .day-btn.weekday {
+            background-color: var(--weekday-bg);
+            border-color: var(--weekday-border);
+        }
+
+        .day-btn.weekend {
+            background-color: var(--weekend-bg);
+            border-color: var(--weekend-border);
+        }
+
+        .day-btn.weekday .btn-label { color: #0d47a1; }
+        .day-btn.weekend .btn-label { color: #bf360c; }
+
+        /* Custom color styles for Seasons */
+        .season-tavasz { border-color: #7cb342; }
+        .season-tavasz.selected { background-color: #f1f8e9; border-color: #689f38; }
+        .season-nyar { border-color: #fdd835; }
+        .season-nyar.selected { background-color: #fffde7; border-color: #fbc02d; }
+        .season-osz { border-color: #fb8c00; }
+        .season-osz.selected { background-color: #fff3e0; border-color: #f57c00; }
+        .season-tel { border-color: #29b6f6; }
+        .season-tel.selected { background-color: #e1f5fe; border-color: #0288d1; }
+
+        /* Date Buttons */
+        .date-btn {
+            padding: 8px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            aspect-ratio: 1;
+        }
+
+        /* Clothes Multi-toggle Grid */
+        .clothes-btn {
+            border-color: #ba68c8;
+        }
+        .clothes-btn.selected {
+            background-color: #f3e5f5;
+            border-color: #ab47bc;
+            box-shadow: 0 0 0 4px rgba(171, 71, 188, 0.4);
+        }
+
+        /* Teacher Protection Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            border: 4px solid #ff5252;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            color: #d32f2f;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .modal-desc {
+            font-size: 1.05rem;
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-confirm {
+            background-color: #ff5252;
+            color: white;
+        }
+        .modal-btn-confirm:hover { background-color: #d32f2f; }
+
+        .modal-btn-cancel {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .modal-btn-cancel:hover { background-color: #bdbdbd; }
+
+        /* Sound toggle button */
+        .sound-toggle {
+            background-color: #ffffff;
+            border: 2px solid #ffa000;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
+        }
+        .sound-toggle:hover { transform: scale(1.1); }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Modal for Teacher Reset Protection -->
+    <div class="modal-overlay" id="reset-modal">
+        <div class="modal-box">
+            <div class="modal-title">🧹 Törlés - Új nap indítása</div>
+            <div class="modal-desc">Biztosan visszaállítod a táblát tiszta lapra? A jelenlegi kiválasztások törlődnek az óvónő naptárából.</div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">Mégse</button>
+                <button class="modal-btn modal-btn-confirm" id="modal-confirm-btn">Igen, töröld!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-title-container">
+            <!-- Cute Teddy Bear SVG icon -->
+            <svg viewBox="0 0 100 100">
+                <circle cx="30" cy="30" r="15" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                <circle cx="30" cy="30" r="8" fill="#ffcc80"/>
+                <circle cx="70" cy="30" r="15" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                <circle cx="70" cy="30" r="8" fill="#ffcc80"/>
+                <circle cx="50" cy="55" r="35" fill="#a1887f" stroke="#5d4037" stroke-width="3"/>
+                <ellipse cx="50" cy="62" rx="16" ry="12" fill="#ffe0b2"/>
+                <ellipse cx="50" cy="57" rx="6" ry="4" fill="#3e2723"/>
+                <circle cx="38" cy="48" r="4" fill="#3e2723"/>
+                <circle cx="62" cy="48" r="4" fill="#3e2723"/>
+                <circle cx="40" cy="46" r="1.5" fill="#ffffff"/>
+                <circle cx="64" cy="46" r="1.5" fill="#ffffff"/>
+                <path d="M 45 65 Q 50 70 55 65" fill="none" stroke="#3e2723" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <h1>Mackó Csoport Naptára & Időjárás-táblája</h1>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="sound-toggle" id="sound-btn" title="Hang ki/be">
+                <span id="sound-icon" style="font-size: 1.3rem;">🔊</span>
+            </button>
+            <button class="btn-reset" id="reset-btn">
+                <span>✨ Új nap</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <div class="app-container">
+
+        <!-- Left Side: Summary & Bear Stage -->
+        <div class="left-panel">
+
+            <!-- Mai napunk Summary Board -->
+            <div class="summary-card">
+                <div class="summary-title">🌟 Mai napunk</div>
+                <div class="summary-display" id="summary-display">
+                    <div class="date-text" id="summary-date-text">Válassz a jobb oldali opciókból!</div>
+                    <div class="weather-text" id="summary-weather-text"></div>
+                </div>
+            </div>
+
+            <!-- Bear Dressing Card -->
+            <div class="bear-card">
+                <div class="bear-title">🧸 Mackó barátunk</div>
+
+                <div class="speech-bubble" id="bear-speech">
+                    Szia! Állítsuk be együtt a mai napot és öltöztessünk fel!
+                </div>
+
+                <div class="bear-stage" id="bear-stage">
+                    <!-- Complete Interactive Bear SVG with Clothing Layers -->
+                    <svg id="bear-svg" viewBox="0 0 200 240" width="220" height="260">
+                        <!-- Shadow -->
+                        <ellipse cx="100" cy="225" rx="65" ry="10" fill="#000000" opacity="0.12"/>
+
+                        <!-- Bear Feet / Boots Layer Base -->
+                        <g id="layer-feet">
+                            <ellipse cx="70" cy="215" rx="18" ry="12" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                            <ellipse cx="130" cy="215" rx="18" ry="12" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                            <ellipse cx="70" cy="215" rx="10" ry="6" fill="#d7ccc8"/>
+                            <ellipse cx="130" cy="215" rx="10" ry="6" fill="#d7ccc8"/>
+                        </g>
+
+                        <!-- Bear Arms Base -->
+                        <g id="layer-arms-back">
+                            <!-- Left Arm -->
+                            <path d="M 50 120 Q 30 140 38 175 Q 52 175 60 145 Z" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                            <!-- Right Arm -->
+                            <path d="M 150 120 Q 170 140 162 175 Q 148 175 140 145 Z" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                        </g>
+
+                        <!-- Bear Body -->
+                        <g id="layer-body">
+                            <ellipse cx="100" cy="155" rx="52" ry="58" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                            <!-- Tummy patch -->
+                            <ellipse id="bear-tummy" cx="100" cy="158" rx="34" ry="40" fill="#ffcc80"/>
+                        </g>
+
+                        <!-- Bear Head -->
+                        <g id="layer-head">
+                            <!-- Ears -->
+                            <circle cx="55" cy="50" r="20" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                            <circle cx="55" cy="50" r="11" fill="#ffcc80"/>
+                            <circle cx="145" cy="50" r="20" fill="#8d6e63" stroke="#5d4037" stroke-width="3"/>
+                            <circle cx="145" cy="50" r="11" fill="#ffcc80"/>
+
+                            <!-- Head main -->
+                            <circle cx="100" cy="80" r="46" fill="#a1887f" stroke="#5d4037" stroke-width="3"/>
+                            <!-- Snout -->
+                            <ellipse cx="100" cy="92" rx="20" ry="15" fill="#ffe0b2" stroke="#5d4037" stroke-width="1.5"/>
+                            <ellipse cx="100" cy="85" rx="8" ry="5" fill="#3e2723"/>
+                            <!-- Smile -->
+                            <path d="M 92 95 Q 100 103 108 95" fill="none" stroke="#3e2723" stroke-width="3" stroke-linecap="round"/>
+                            <!-- Eyes -->
+                            <circle cx="84" cy="74" r="5" fill="#3e2723"/>
+                            <circle cx="116" cy="74" r="5" fill="#3e2723"/>
+                            <circle cx="86" cy="72" r="1.8" fill="#ffffff"/>
+                            <circle cx="118" cy="72" r="1.8" fill="#ffffff"/>
+                            <!-- Cheeks -->
+                            <circle cx="72" cy="86" r="7" fill="#ff8a80" opacity="0.6"/>
+                            <circle cx="128" cy="86" r="7" fill="#ff8a80" opacity="0.6"/>
+                        </g>
+
+                        <!-- CLOTHING OVERLAY LAYERS (Toggled dynamically) -->
+
+                        <!-- Clothes: Top (Póló, Pulóver, Esőkabát, Télikabát) -->
+                        <g id="clothing-polo" style="display: none;">
+                            <path d="M 52 118 Q 100 110 148 118 L 152 180 Q 100 195 48 180 Z" fill="#42a5f5" stroke="#1565c0" stroke-width="3"/>
+                            <!-- Cute Star pattern -->
+                            <polygon points="100,135 104,147 117,147 106,155 110,167 100,159 90,167 94,155 83,147 96,147" fill="#ffeb3b"/>
+                        </g>
+
+                        <g id="clothing-pulover" style="display: none;">
+                            <path d="M 50 115 Q 100 108 150 115 L 154 185 Q 100 200 46 185 Z" fill="#ff7043" stroke="#d84315" stroke-width="3"/>
+                            <!-- Stripes -->
+                            <path d="M 50 140 Q 100 132 150 140" stroke="#fff" stroke-width="6" fill="none"/>
+                            <path d="M 48 165 Q 100 157 152 165" stroke="#fff" stroke-width="6" fill="none"/>
+                        </g>
+
+                        <g id="clothing-esokabat" style="display: none;">
+                            <path d="M 48 115 Q 100 106 152 115 L 156 190 Q 100 205 44 190 Z" fill="#ffee58" stroke="#f57f17" stroke-width="3"/>
+                            <line x1="100" y1="112" x2="100" y2="195" stroke="#f57f17" stroke-width="2.5" stroke-dasharray="4"/>
+                            <circle cx="100" cy="135" r="3" fill="#333"/>
+                            <circle cx="100" cy="155" r="3" fill="#333"/>
+                            <circle cx="100" cy="175" r="3" fill="#333"/>
+                        </g>
+
+                        <g id="clothing-telikabat" style="display: none;">
+                            <path d="M 46 112 Q 100 102 154 112 L 158 192 Q 100 208 42 192 Z" fill="#ab47bc" stroke="#4a148c" stroke-width="3"/>
+                            <!-- Fluffy fur collar -->
+                            <path d="M 55 112 Q 100 128 145 112 Q 100 100 55 112 Z" fill="#ffffff" stroke="#ce93d8" stroke-width="2"/>
+                            <!-- Buttons -->
+                            <circle cx="100" cy="135" r="4" fill="#ffd54f"/>
+                            <circle cx="100" cy="160" r="4" fill="#ffd54f"/>
+                        </g>
+
+                        <!-- Clothes: Head Accessories (Napszemüveg, Nyári Kalap, Téli Sapka) -->
+                        <g id="clothing-napszemuveg" style="display: none;">
+                            <rect x="70" y="66" width="24" height="16" rx="4" fill="#212121" stroke="#ffeb3b" stroke-width="2"/>
+                            <rect x="106" y="66" width="24" height="16" rx="4" fill="#212121" stroke="#ffeb3b" stroke-width="2"/>
+                            <line x1="94" y1="72" x2="106" y2="72" stroke="#ffeb3b" stroke-width="3"/>
+                            <line x1="55" y1="72" x2="70" y2="72" stroke="#ffeb3b" stroke-width="2"/>
+                            <line x1="130" y1="72" x2="145" y2="72" stroke="#ffeb3b" stroke-width="2"/>
+                        </g>
+
+                        <g id="clothing-nyari-kalap" style="display: none;">
+                            <ellipse cx="100" cy="48" rx="55" ry="10" fill="#fff176" stroke="#fbc02d" stroke-width="2"/>
+                            <path d="M 68 47 C 68 20 132 20 132 47 Z" fill="#fff59d" stroke="#fbc02d" stroke-width="2"/>
+                            <path d="M 68 45 Q 100 50 132 45" stroke="#e91e63" stroke-width="4" fill="none"/>
+                        </g>
+
+                        <g id="clothing-teli-sapka" style="display: none;">
+                            <!-- Beanie -->
+                            <path d="M 60 55 C 60 15 140 15 140 55 Z" fill="#ef5350" stroke="#b71c1c" stroke-width="3"/>
+                            <!-- Rim -->
+                            <rect x="56" y="48" width="88" height="14" rx="7" fill="#ffffff" stroke="#b71c1c" stroke-width="2"/>
+                            <!-- Pom-pom -->
+                            <circle cx="100" cy="18" r="12" fill="#ffffff" stroke="#b71c1c" stroke-width="2"/>
+                        </g>
+
+                        <g id="clothing-sal" style="display: none;">
+                            <path d="M 65 105 Q 100 120 135 105 Q 130 118 100 122 Q 70 118 65 105 Z" fill="#26a69a" stroke="#004d40" stroke-width="2.5"/>
+                            <path d="M 110 115 L 125 155 L 105 155 Z" fill="#26a69a" stroke="#004d40" stroke-width="2"/>
+                        </g>
+
+                        <g id="clothing-esernyo" style="display: none;">
+                            <!-- Umbrella held in right paw -->
+                            <line x1="160" y1="110" x2="165" y2="210" stroke="#757575" stroke-width="4" stroke-linecap="round"/>
+                            <path d="M 165 210 Q 170 220 160 220" fill="none" stroke="#757575" stroke-width="4"/>
+                            <path d="M 120 110 Q 165 60 210 110 Z" fill="#e91e63" stroke="#880e4f" stroke-width="3"/>
+                        </g>
+
+                        <!-- Clothes: Footwear (Gumicsizma, Hótaposó) -->
+                        <g id="clothing-gumicsizma" style="display: none;">
+                            <!-- Left boot -->
+                            <path d="M 52 195 L 85 195 L 88 224 Q 70 228 50 224 Z" fill="#26c6da" stroke="#00838f" stroke-width="2.5"/>
+                            <!-- Right boot -->
+                            <path d="M 115 195 L 148 195 L 150 224 Q 130 228 112 224 Z" fill="#26c6da" stroke="#00838f" stroke-width="2.5"/>
+                        </g>
+
+                        <g id="clothing-hotaposo" style="display: none;">
+                            <!-- Left heavy boot -->
+                            <path d="M 50 192 L 88 192 L 90 226 Q 70 230 48 226 Z" fill="#8d6e63" stroke="#3e2723" stroke-width="3"/>
+                            <rect x="50" y="190" width="38" height="8" rx="3" fill="#ffffff"/>
+                            <!-- Right heavy boot -->
+                            <path d="M 112 192 L 150 192 L 152 226 Q 130 230 110 226 Z" fill="#8d6e63" stroke="#3e2723" stroke-width="3"/>
+                            <rect x="112" y="190" width="38" height="8" rx="3" fill="#ffffff"/>
+                        </g>
+
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Side: Selection Controls -->
+        <div class="right-panel">
+
+            <!-- 1. Évszakok (Seasons) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">1</span>
+                    <span>Évszakok</span>
+                </div>
+                <div class="options-grid grid-4" id="seasons-container"></div>
+            </div>
+
+            <!-- 2. Hónapok (Months) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">2</span>
+                    <span>Hónapok</span>
+                </div>
+                <div class="options-grid grid-4" id="months-container"></div>
+            </div>
+
+            <!-- 3. A Hét Napjai (Days of the Week) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">3</span>
+                    <span>A hét napjai</span>
+                </div>
+                <div class="options-grid grid-7" id="days-container"></div>
+            </div>
+
+            <!-- 4. Dátum / Napok száma (1-31) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">4</span>
+                    <span>Nap száma (Dátum)</span>
+                </div>
+                <div class="options-grid grid-dates" id="dates-container"></div>
+            </div>
+
+            <!-- 5. Időjárási Jelensegek (Weather) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">5</span>
+                    <span>Milyen ma az időjárás?</span>
+                </div>
+                <div class="options-grid grid-4" id="weather-container"></div>
+            </div>
+
+            <!-- 6. Maci Öltöztetése (Clothing Options) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">6</span>
+                    <span>Öltöztesd fel a Macit az időjáráshoz!</span>
+                </div>
+                <div class="options-grid grid-4" id="clothes-container"></div>
+            </div>
+
+            <!-- 7. Évszám (Year) -->
+            <div class="section-box">
+                <div class="section-header">
+                    <span class="badge">7</span>
+                    <span>Évszám</span>
+                </div>
+                <div class="options-grid grid-4" id="years-container"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // DATA DEFINITIONS (Hungarian)
+        const SEASONS = [
+            { id: 'tavasz', name: 'Tavasz', colorClass: 'season-tavasz', icon: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="10" fill="#ffeb3b"/><path d="M 32 10 Q 32 2 32 2 Q 32 2 32 10 Z M 32 54 Q 32 62 32 62 M 10 32 Q 2 32 2 32 M 54 32 Q 62 32 62 32" stroke="#fbc02d" stroke-width="4"/><circle cx="32" cy="16" r="8" fill="#e91e63"/><circle cx="48" cy="32" r="8" fill="#ab47bc"/><circle cx="32" cy="48" r="8" fill="#42a5f5"/><circle cx="16" cy="32" r="8" fill="#ffee58"/></svg>` },
+            { id: 'nyar', name: 'Nyár', colorClass: 'season-nyar', icon: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="16" fill="#fbc02d"/><g stroke="#ffa000" stroke-width="4" stroke-linecap="round"><line x1="32" y1="4" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="60"/><line x1="4" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="60" y2="32"/><line x1="12" y1="12" x2="17" y2="17"/><line x1="47" y1="47" x2="52" y2="52"/><line x1="12" y1="52" x2="17" y2="47"/><line x1="47" y1="17" x2="52" y2="12"/></g></svg>` },
+            { id: 'osz', name: 'Ősz', colorClass: 'season-osz', icon: `<svg viewBox="0 0 64 64"><path d="M 32 10 Q 45 20 40 38 Q 32 50 32 58 Q 32 50 24 38 Q 19 20 32 10 Z" fill="#ff9800" stroke="#e65100" stroke-width="2"/><line x1="32" y1="18" x2="32" y2="54" stroke="#e65100" stroke-width="2"/><path d="M 32 26 L 40 20 M 32 34 L 42 28 M 32 42 L 38 38 M 32 26 L 24 20 M 32 34 L 22 28 M 32 42 L 26 38" stroke="#e65100" stroke-width="2"/></svg>` },
+            { id: 'tel', name: 'Tél', colorClass: 'season-tel', icon: `<svg viewBox="0 0 64 64"><g stroke="#29b6f6" stroke-width="4" stroke-linecap="round"><line x1="32" y1="6" x2="32" y2="58"/><line x1="6" y1="32" x2="58" y2="32"/><line x1="14" y1="14" x2="50" y2="50"/><line x1="14" y1="50" x2="50" y2="14"/><circle cx="32" cy="32" r="5" fill="#81d4fa"/></g></svg>` }
+        ];
+
+        const MONTHS = [
+            { id: 'januar', name: 'Január', icon: '❄️' },
+            { id: 'februar', name: 'Február', icon: '☃️' },
+            { id: 'marcius', name: 'Március', icon: '🌱' },
+            { id: 'aprilis', name: 'Április', icon: '🌸' },
+            { id: 'majus', name: 'Május', icon: '🌺' },
+            { id: 'junius', name: 'Június', icon: '☀️' },
+            { id: 'julius', name: 'Július', icon: '🏖️' },
+            { id: 'augusztus', name: 'Augusztus', icon: '🍉' },
+            { id: 'szeptember', name: 'Szeptember', icon: '🍎' },
+            { id: 'oktober', name: 'Október', icon: '🍁' },
+            { id: 'november', name: 'November', icon: '🦔' },
+            { id: 'december', name: 'December', icon: '🎄' }
+        ];
+
+        const DAYS = [
+            { id: 'hetfo', name: 'Hétfő', type: 'weekday', icon: '1️⃣' },
+            { id: 'kedd', name: 'Kedd', type: 'weekday', icon: '2️⃣' },
+            { id: 'szerda', name: 'Szerda', type: 'weekday', icon: '3️⃣' },
+            { id: 'csutortok', name: 'Csütörtök', type: 'weekday', icon: '4️⃣' },
+            { id: 'pentek', name: 'Péntek', type: 'weekday', icon: '5️⃣' },
+            { id: 'szombat', name: 'Szombat', type: 'weekend', icon: '6️⃣' },
+            { id: 'vasarnap', name: 'Vasárnap', type: 'weekend', icon: '7️⃣' }
+        ];
+
+        const WEATHERS = [
+            { id: 'napsutes', name: 'Napsütés', icon: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="#ffeb3b" stroke="#fbc02d" stroke-width="2"/><g stroke="#fbc02d" stroke-width="4" stroke-linecap="round"><line x1="32" y1="4" x2="32" y2="10"/><line x1="32" y1="54" x2="32" y2="60"/><line x1="4" y1="32" x2="10" y2="32"/><line x1="54" y1="32" x2="60" y2="32"/><line x1="12" y1="12" x2="17" y2="17"/><line x1="47" y1="47" x2="52" y2="52"/><line x1="12" y1="52" x2="17" y2="47"/><line x1="47" y1="17" x2="52" y2="12"/></g></svg>` },
+            { id: 'felhos', name: 'Felhős idő', icon: `<svg viewBox="0 0 64 64"><path d="M 18 42 A 12 12 0 0 1 22 18 A 16 16 0 0 1 50 24 A 12 12 0 0 1 48 42 Z" fill="#cfd8dc" stroke="#90a4ae" stroke-width="3"/></svg>` },
+            { id: 'eso', name: 'Esős idő', icon: `<svg viewBox="0 0 64 64"><path d="M 18 36 A 12 12 0 0 1 22 14 A 16 16 0 0 1 50 20 A 12 12 0 0 1 48 36 Z" fill="#90a4ae" stroke="#546e7a" stroke-width="2"/><line x1="22" y1="44" x2="18" y2="54" stroke="#29b6f6" stroke-width="3" stroke-linecap="round"/><line x1="34" y1="44" x2="30" y2="54" stroke="#29b6f6" stroke-width="3" stroke-linecap="round"/><line x1="46" y1="44" x2="42" y2="54" stroke="#29b6f6" stroke-width="3" stroke-linecap="round"/></svg>` },
+            { id: 'havazas', name: 'Havazás', icon: `<svg viewBox="0 0 64 64"><path d="M 18 34 A 12 12 0 0 1 22 12 A 16 16 0 0 1 50 18 A 12 12 0 0 1 48 34 Z" fill="#e0e0e0" stroke="#9e9e9e" stroke-width="2"/><circle cx="22" cy="46" r="3" fill="#29b6f6"/><circle cx="34" cy="52" r="3" fill="#29b6f6"/><circle cx="46" cy="46" r="3" fill="#29b6f6"/></svg>` },
+            { id: 'szeles', name: 'Szeles idő', icon: `<svg viewBox="0 0 64 64"><path d="M 8 20 Q 30 15 44 20 A 6 6 0 1 0 44 10 M 12 32 Q 38 28 52 32 A 6 6 0 1 0 52 22 M 6 44 Q 24 40 36 44 A 6 6 0 1 0 36 34" fill="none" stroke="#81d4fa" stroke-width="4" stroke-linecap="round"/></svg>` },
+            { id: 'zivatar', name: 'Zivatar', icon: `<svg viewBox="0 0 64 64"><path d="M 18 32 A 12 12 0 0 1 22 10 A 16 16 0 0 1 50 16 A 12 12 0 0 1 48 32 Z" fill="#455a64" stroke="#263238" stroke-width="2"/><polygon points="32,28 24,44 32,44 28,60 42,40 34,40" fill="#ffeb3b" stroke="#fbc02d" stroke-width="1.5"/></svg>` },
+            { id: 'kod', name: 'Ködös idő', icon: `<svg viewBox="0 0 64 64"><line x1="10" y1="20" x2="54" y2="20" stroke="#b0bec5" stroke-width="5" stroke-linecap="round"/><line x1="6" y1="32" x2="58" y2="32" stroke="#b0bec5" stroke-width="5" stroke-linecap="round"/><line x1="14" y1="44" x2="50" y2="44" stroke="#b0bec5" stroke-width="5" stroke-linecap="round"/></svg>` }
+        ];
+
+        const CLOTHES = [
+            { id: 'polo', name: 'Póló', category: 'top', layerId: 'clothing-polo', icon: '👕' },
+            { id: 'pulover', name: 'Pulóver', category: 'top', layerId: 'clothing-pulover', icon: '🧥' },
+            { id: 'esokabat', name: 'Esőkabát', category: 'top', layerId: 'clothing-esokabat', icon: '🟡' },
+            { id: 'telikabat', name: 'Télikabát', category: 'top', layerId: 'clothing-telikabat', icon: '🥼' },
+            { id: 'napszemuveg', name: 'Napszemüveg', category: 'head', layerId: 'clothing-napszemuveg', icon: '🕶️' },
+            { id: 'nyari-kalap', name: 'Nyári kalap', category: 'head', layerId: 'clothing-nyari-kalap', icon: '👒' },
+            { id: 'teli-sapka', name: 'Téli sapka', category: 'head', layerId: 'clothing-teli-sapka', icon: '🧶' },
+            { id: 'sal', name: 'Sál', category: 'neck', layerId: 'clothing-sal', icon: '🧣' },
+            { id: 'esernyo', name: 'Esernyő', category: 'accessory', layerId: 'clothing-esernyo', icon: '☂️' },
+            { id: 'gumicsizma', name: 'Gumicsizma', category: 'feet', layerId: 'clothing-gumicsizma', icon: '🥾' },
+            { id: 'hotaposo', name: 'Hótaposó', category: 'feet', layerId: 'clothing-hotaposo', icon: '👢' }
+        ];
+
+        const YEARS = ['2025', '2026', '2027', '2028'];
+
+        const PRAISES = [
+            "Nagyon ügyes vagy! 👏",
+            "Szuper választás! 🌟",
+            "Micsoda remek nap! 🎉",
+            "Gyönyörűen áll a Macinak! 🧸",
+            "Okos kis mackó csoportos vagy! 🎈",
+            "Így tovább, fantasztikus! ⭐"
+        ];
+
+        // STATE OBJECT
+        let state = {
+            year: null,
+            season: null,
+            month: null,
+            day: null,
+            date: null,
+            weather: null,
+            clothes: [], // array of selected clothes IDs
+            soundEnabled: true
+        };
+
+        // AUDIO SYNTHESIZER (Web Audio API)
+        let audioCtx = null;
+
+        function playChime() {
+            if (!state.soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const now = audioCtx.currentTime;
+                // Play a cute 3-note ascending chime (C5, E5, G5)
+                const notes = [523.25, 659.25, 783.99];
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+
+                    gain.gain.setValueAtTime(0.2, now + index * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.1 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start(now + index * 0.1);
+                    osc.stop(now + index * 0.1 + 0.3);
+                });
+            } catch (e) {
+                console.log("Audio play error:", e);
+            }
+        }
+
+        // CONFETTI ANIMATION
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerConfetti() {
+            for (let i = 0; i < 35; i++) {
+                particles.push({
+                    x: window.innerWidth / 2 + (Math.random() * 200 - 100),
+                    y: window.innerHeight / 3,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: Math.random() * -10 - 4,
+                    color: ['#ff4081', '#ffeb3b', '#00e676', '#00b0ff', '#aa00ff'][Math.floor(Math.random() * 5)],
+                    size: Math.random() * 8 + 6,
+                    rotation: Math.random() * 360,
+                    vRot: (Math.random() - 0.5) * 10
+                });
+            }
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.4; // gravity
+                p.rotation += p.vRot;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+
+                if (p.y > canvas.height + 20) {
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(updateConfetti);
+        }
+        requestAnimationFrame(updateConfetti);
+
+        // UI RENDERERS
+        function renderSeasons() {
+            const container = document.getElementById('seasons-container');
+            container.innerHTML = '';
+            SEASONS.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn ${s.colorClass} ${state.season === s.id ? 'selected' : ''}`;
+                btn.innerHTML = `${s.icon}<span class="btn-label">${s.name}</span>`;
+                btn.onclick = () => selectSeason(s.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderMonths() {
+            const container = document.getElementById('months-container');
+            container.innerHTML = '';
+            MONTHS.forEach(m => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn ${state.month === m.id ? 'selected' : ''}`;
+                btn.innerHTML = `<span style="font-size: 1.8rem;">${m.icon}</span><span class="btn-label">${m.name}</span>`;
+                btn.onclick = () => selectMonth(m.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderDays() {
+            const container = document.getElementById('days-container');
+            container.innerHTML = '';
+            DAYS.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn day-btn ${d.type} ${state.day === d.id ? 'selected' : ''}`;
+                btn.innerHTML = `<span style="font-size: 1.4rem;">${d.icon}</span><span class="btn-label">${d.name}</span>`;
+                btn.onclick = () => selectDay(d.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderDates() {
+            const container = document.getElementById('dates-container');
+            container.innerHTML = '';
+            for (let i = 1; i <= 31; i++) {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn date-btn ${state.date === i ? 'selected' : ''}`;
+                btn.innerHTML = `<span class="btn-label">${i}</span>`;
+                btn.onclick = () => selectDate(i);
+                container.appendChild(btn);
+            }
+        }
+
+        function renderWeather() {
+            const container = document.getElementById('weather-container');
+            container.innerHTML = '';
+            WEATHERS.forEach(w => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn ${state.weather === w.id ? 'selected' : ''}`;
+                btn.innerHTML = `${w.icon}<span class="btn-label">${w.name}</span>`;
+                btn.onclick = () => selectWeather(w.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderClothes() {
+            const container = document.getElementById('clothes-container');
+            container.innerHTML = '';
+            CLOTHES.forEach(c => {
+                const isSelected = state.clothes.includes(c.id);
+                const btn = document.createElement('button');
+                btn.className = `choice-btn clothes-btn ${isSelected ? 'selected' : ''}`;
+                btn.innerHTML = `<span style="font-size: 1.8rem;">${c.icon}</span><span class="btn-label">${c.name}</span>`;
+                btn.onclick = () => toggleClothing(c.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderYears() {
+            const container = document.getElementById('years-container');
+            container.innerHTML = '';
+            YEARS.forEach(y => {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn ${state.year === y ? 'selected' : ''}`;
+                btn.innerHTML = `<span style="font-size: 1.2rem; font-weight: bold;" class="btn-label">${y}</span>`;
+                btn.onclick = () => selectYear(y);
+                container.appendChild(btn);
+            });
+        }
+
+        // SELECTION HANDLERS
+        function triggerActionEffects() {
+            playChime();
+            triggerConfetti();
+
+            // Bear jump animation
+            const bearStage = document.getElementById('bear-stage');
+            bearStage.classList.remove('bear-animate');
+            void bearStage.offsetWidth; // trigger reflow
+            bearStage.classList.add('bear-animate');
+
+            // Random praise message
+            const randomPraise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+            document.getElementById('bear-speech').innerText = randomPraise;
+
+            saveState();
+            updateSummaryDisplay();
+        }
+
+        function selectSeason(id) {
+            state.season = id;
+            renderSeasons();
+            triggerActionEffects();
+        }
+
+        function selectMonth(id) {
+            state.month = id;
+            renderMonths();
+            triggerActionEffects();
+        }
+
+        function selectDay(id) {
+            state.day = id;
+            renderDays();
+            triggerActionEffects();
+        }
+
+        function selectDate(num) {
+            state.date = num;
+            renderDates();
+            triggerActionEffects();
+        }
+
+        function selectWeather(id) {
+            state.weather = id;
+            renderWeather();
+            triggerActionEffects();
+        }
+
+        function selectYear(yr) {
+            state.year = yr;
+            renderYears();
+            triggerActionEffects();
+        }
+
+        function toggleClothing(id) {
+            const item = CLOTHES.find(c => c.id === id);
+            if (!item) return;
+
+            if (state.clothes.includes(id)) {
+                // Remove item
+                state.clothes = state.clothes.filter(cId => cId !== id);
+            } else {
+                // If top item selected, remove other tops to avoid overlapping clothing bug
+                if (item.category === 'top') {
+                    state.clothes = state.clothes.filter(cId => {
+                        const cl = CLOTHES.find(x => x.id === cId);
+                        return cl && cl.category !== 'top';
+                    });
+                }
+                // If head item selected, remove other head items
+                if (item.category === 'head') {
+                    state.clothes = state.clothes.filter(cId => {
+                        const cl = CLOTHES.find(x => x.id === cId);
+                        return cl && cl.category !== 'head';
+                    });
+                }
+                // If feet item selected, remove other feet items
+                if (item.category === 'feet') {
+                    state.clothes = state.clothes.filter(cId => {
+                        const cl = CLOTHES.find(x => x.id === cId);
+                        return cl && cl.category !== 'feet';
+                    });
+                }
+                state.clothes.push(id);
+            }
+
+            renderClothes();
+            updateBearSVGClothes();
+            triggerActionEffects();
+        }
+
+        // UPDATE BEAR SVG VISIBILITY
+        function updateBearSVGClothes() {
+            CLOTHES.forEach(c => {
+                const layer = document.getElementById(c.layerId);
+                if (layer) {
+                    if (state.clothes.includes(c.id)) {
+                        layer.style.display = 'inline';
+                    } else {
+                        layer.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // SUMMARY BOARD DISPLAY UPDATE
+        function updateSummaryDisplay() {
+            const dateTextEl = document.getElementById('summary-date-text');
+            const weatherTextEl = document.getElementById('summary-weather-text');
+
+            const seasonObj = SEASONS.find(s => s.id === state.season);
+            const monthObj = MONTHS.find(m => m.id === state.month);
+            const dayObj = DAYS.find(d => d.id === state.day);
+            const weatherObj = WEATHERS.find(w => w.id === state.weather);
+
+            let dateStringParts = [];
+            if (state.year) dateStringParts.push(`${state.year}.`);
+            if (seasonObj) dateStringParts.push(seasonObj.name);
+            if (monthObj) dateStringParts.push(monthObj.name);
+            if (state.date) dateStringParts.push(`${state.date}.`);
+            if (dayObj) dateStringParts.push(`(${dayObj.name})`);
+
+            if (dateStringParts.length > 0) {
+                dateTextEl.innerHTML = `📅 ${dateStringParts.join(' ')}`;
+            } else {
+                dateTextEl.innerHTML = `Válassz a jobb oldali opciókból!`;
+            }
+
+            if (weatherObj) {
+                weatherTextEl.innerHTML = `🌤️ Időjárás: <strong>${weatherObj.name}</strong>`;
+            } else {
+                weatherTextEl.innerHTML = ``;
+            }
+        }
+
+        // LOCAL STORAGE MANAGEMENT
+        function saveState() {
+            localStorage.setItem('macko_naptar_state', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('macko_naptar_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = { ...state, ...parsed };
+                } catch (e) {
+                    console.error("State parse error:", e);
+                }
+            }
+        }
+
+        // RESET LOGIC WITH TEACHER CONFIRMATION MODAL
+        const modal = document.getElementById('reset-modal');
+        const resetBtn = document.getElementById('reset-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+
+        resetBtn.onclick = () => {
+            modal.classList.add('active');
+        };
+
+        modalCancelBtn.onclick = () => {
+            modal.classList.remove('active');
+        };
+
+        modalConfirmBtn.onclick = () => {
+            modal.classList.remove('active');
+            // Reset state to empty clean sheet
+            state = {
+                year: null,
+                season: null,
+                month: null,
+                day: null,
+                date: null,
+                weather: null,
+                clothes: [],
+                soundEnabled: state.soundEnabled
+            };
+            saveState();
+            renderAll();
+            updateBearSVGClothes();
+            updateSummaryDisplay();
+            document.getElementById('bear-speech').innerText = 'Szia! Tiszta lapot nyitottunk. Kezdjük a választást!';
+        };
+
+        // SOUND TOGGLE
+        const soundBtn = document.getElementById('sound-btn');
+        const soundIcon = document.getElementById('sound-icon');
+
+        soundBtn.onclick = () => {
+            state.soundEnabled = !state.soundEnabled;
+            soundIcon.innerText = state.soundEnabled ? '🔊' : '🔇';
+            saveState();
+        };
+
+        function renderAll() {
+            renderSeasons();
+            renderMonths();
+            renderDays();
+            renderDates();
+            renderWeather();
+            renderClothes();
+            renderYears();
+        }
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderAll();
+            updateBearSVGClothes();
+            updateSummaryDisplay();
+
+            if (state.soundEnabled) {
+                soundIcon.innerText = '🔊';
+            } else {
+                soundIcon.innerText = '🔇';
+            }
+        });
+    </script>
+</body>
+</html>
